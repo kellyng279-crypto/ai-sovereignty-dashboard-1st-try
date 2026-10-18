@@ -1,0 +1,773 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Who Holds the Intelligence?</title>
+<style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}</style>
+
+<style>
+/* Layout: centred 1320px column; slim header, hero, sticky-free nav, two-column chart grid on laptops, one column below 900px */
+:root{
+  --bg:#f5f5f2; --surface:#ffffff; --surface-2:#f0f1ec; --fg:#1d1d1f; --muted:#5f625c; --line:#e3e4de;
+  --accent:#5f7f63; --accent-soft:#e3ebe2; --accent-ink:#3f5c43; --neutral-bar:#b9bcb3; --warn-bg:#fbf1e3; --warn-fg:#7a4b12; --err-bg:#fbe9e7; --err-fg:#8a2a1c;
+  --shadow:0 1px 2px rgba(29,29,31,.04),0 6px 20px rgba(29,29,31,.05);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --r:18px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141514; --surface:#1d1f1d; --surface-2:#252825; --fg:#ececea; --muted:#a6aaa2; --line:#323631;
+  --accent:#8fb293; --accent-soft:#2b3a2d; --accent-ink:#b5d1b8; --neutral-bar:#5d625b; --warn-bg:#3a2e1c; --warn-fg:#f0c88a; --err-bg:#3d221e; --err-fg:#f3b2a6;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141514; --surface:#1d1f1d; --surface-2:#252825; --fg:#ececea; --muted:#a6aaa2; --line:#323631;
+  --accent:#8fb293; --accent-soft:#2b3a2d; --accent-ink:#b5d1b8; --neutral-bar:#5d625b; --warn-bg:#3a2e1c; --warn-fg:#f0c88a; --err-bg:#3d221e; --err-fg:#f3b2a6;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 6px 20px rgba(0,0,0,.25); color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion: reduce){html{scroll-behavior:auto}*{transition:none!important}}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1320px;margin:0 auto;padding-inline:clamp(16px,3vw,40px)}
+a{color:var(--accent-ink)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px;border-radius:8px}
+h1,h2,h3{text-wrap:balance;letter-spacing:-.01em;margin:0}
+h2{font-size:1.55rem;font-weight:650}
+h3{font-size:1.08rem;font-weight:650}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.eyebrow{font-size:.74rem;text-transform:uppercase;letter-spacing:.08em;color:var(--muted);font-weight:600}
+.num{font-variant-numeric:tabular-nums}
+code,.mono{font-family:var(--mono);font-size:.85em}
+
+/* header */
+.topbar{border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.4) blur(10px)}
+.topbar .wrap{display:flex;gap:18px;flex-wrap:wrap;align-items:center;padding-block:10px;font-size:.82rem;color:var(--muted)}
+.topbar strong{color:var(--fg);font-weight:600}
+.dot{width:4px;height:4px;border-radius:50%;background:var(--neutral-bar)}
+.hero{padding-block:56px 28px;display:grid;gap:14px}
+.hero h1{font-size:clamp(2.2rem,5vw,3.6rem);font-weight:700;line-height:1.05;letter-spacing:-.03em}
+.hero h1:focus{outline:none}
+.hero p{max-width:66ch;font-size:1.06rem;color:var(--muted)}
+.badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:999px;background:var(--warn-bg);color:var(--warn-fg);font-size:.82rem;font-weight:600;width:fit-content}
+.badge::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor}
+nav.sections{display:flex;flex-wrap:wrap;gap:6px;padding-block:6px 22px}
+nav.sections a{padding:7px 14px;border-radius:999px;background:var(--surface);border:1px solid var(--line);color:var(--fg);text-decoration:none;font-size:.88rem}
+nav.sections a:hover{border-color:var(--accent)}
+
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);box-shadow:var(--shadow);padding:clamp(18px,2.4vw,28px);min-width:0}
+section{scroll-margin-top:16px}
+.stack{display:grid;gap:20px}
+.block{margin-block:0 28px}
+.section-head{display:grid;gap:6px;margin-bottom:16px}
+.section-head p{max-width:75ch}
+
+/* workbook panel */
+.wb{display:grid;grid-template-columns:1.2fr 1fr;gap:22px}
+@media (max-width:900px){.wb{grid-template-columns:minmax(0,1fr)}}
+.wb>*,.stack>*{min-width:0}
+select{max-width:100%}
+.filters .row>label{min-width:0;max-width:100%}
+.drop{border:1.5px dashed var(--neutral-bar);border-radius:14px;padding:20px;display:grid;gap:10px;justify-items:start;background:var(--surface-2)}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.btn{font:inherit;font-size:.9rem;font-weight:600;padding:9px 16px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--fg);cursor:pointer}
+.btn:hover{border-color:var(--accent)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.btn.primary:hover{filter:brightness(1.05)}
+.row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+dl.facts{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;margin:0}
+dl.facts dt{color:var(--muted);font-size:.86rem}
+dl.facts dd{margin:0;font-weight:550;min-width:0;overflow-wrap:anywhere}
+select,input[type=search],textarea{font:inherit;color:var(--fg);background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+select{padding-right:28px}
+label.f{display:grid;gap:4px;font-size:.84rem;color:var(--muted);font-weight:550}
+.msg{padding:12px 14px;border-radius:12px;font-size:.9rem}
+.msg.err{background:var(--err-bg);color:var(--err-fg)}
+.msg.ok{background:var(--accent-soft);color:var(--accent-ink)}
+
+.explain ul{margin:8px 0 0;padding-left:1.2em;display:grid;gap:6px;max-width:85ch}
+
+/* filters */
+.filters{display:grid;gap:14px}
+.filters>*{min-width:0}
+label.f select{width:100%}
+.filters .row{align-items:end}
+.filters input[type=search]{width:min(320px,100%)}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;gap:6px;align-items:center;padding:4px 10px;border-radius:999px;background:var(--accent-soft);color:var(--accent-ink);font-size:.82rem;font-weight:550}
+.status{font-size:.95rem}
+
+/* overview */
+.kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:700px){.kpis{grid-template-columns:1fr}}
+.kpi{background:var(--surface-2);border-radius:14px;padding:16px}
+.kpi .v{font-size:2rem;font-weight:700;letter-spacing:-.02em}
+.obs{display:grid;gap:10px;margin:0;padding:0;list-style:none}
+.obs li{padding:12px 14px;border-left:3px solid var(--accent);background:var(--surface-2);border-radius:0 12px 12px 0}
+
+/* charts */
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px}
+@media (max-width:900px){.grid2{grid-template-columns:1fr}}
+.chart{display:grid;gap:14px;align-content:start}
+.qtext{font-size:.92rem;padding:10px 12px;background:var(--surface-2);border-radius:10px}
+.bars{display:grid;gap:6px}
+.bar{all:unset;box-sizing:border-box;display:grid;grid-template-columns:minmax(120px,38%) 1fr 92px;gap:10px;align-items:center;padding:6px 8px;border-radius:10px;cursor:pointer}
+.bar:hover{background:var(--surface-2)}
+.bar:focus-visible{outline:3px solid var(--accent);outline-offset:1px}
+.bar[aria-pressed=true]{background:var(--accent-soft)}
+.bar-label{font-size:.88rem;line-height:1.25}
+.bar-track{height:14px;background:var(--surface-2);border-radius:999px;overflow:hidden}
+.bar-fill{display:block;height:100%;background:var(--accent);border-radius:999px;min-width:2px}
+.bar.neutral .bar-fill{background:var(--neutral-bar)}
+.bar.zero .bar-fill{min-width:0}
+.bar-val{font-size:.86rem;text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+@media (max-width:480px){.bar{grid-template-columns:1fr 70px}.bar-track{grid-column:1/-1;grid-row:2}}
+.meta{display:grid;gap:8px;font-size:.86rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px}
+.meta b{color:var(--fg);font-weight:600}
+.interp{font-size:.92rem;padding:10px 12px;border-radius:10px;border:1px solid var(--line)}
+.examples{display:grid;gap:8px;font-size:.86rem}
+.examples blockquote{margin:0;padding:8px 12px;border-radius:10px;background:var(--surface-2)}
+
+/* method */
+ol.steps{display:grid;gap:8px;padding-left:1.4em;margin:0;max-width:90ch}
+.worked{display:grid;gap:10px}
+.worked dl.facts{grid-template-columns:max-content 1fr}
+mark{background:var(--accent-soft);color:var(--accent-ink);border-radius:4px;padding:0 2px}
+details.rules>summary{cursor:pointer;font-weight:650;font-size:1.02rem;padding:6px 0}
+.rulegrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:12px}
+@media (max-width:900px){.rulegrid{grid-template-columns:1fr}}
+textarea{width:100%;min-height:64px;resize:vertical;font-size:.86rem}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;font-size:.88rem}
+th,td{text-align:left;vertical-align:top;padding:10px 12px;border-bottom:1px solid var(--line)}
+th{background:var(--surface-2);font-weight:600;font-size:.82rem;position:sticky;top:0}
+tbody tr:last-child td{border-bottom:0}
+.rt td{min-width:220px;max-width:340px}
+.rt td.id{min-width:64px;white-space:nowrap}
+.missing{color:var(--muted);font-style:italic}
+.linkbtn{all:unset;cursor:pointer;color:var(--accent-ink);font-weight:600;font-size:.82rem;text-decoration:underline;text-underline-offset:2px;display:inline-block;margin-top:4px}
+.linkbtn:focus-visible{outline:3px solid var(--accent);border-radius:4px}
+
+.quotes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:1000px){.quotes{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:640px){.quotes{grid-template-columns:1fr}}
+.quote{background:var(--surface-2);border-radius:14px;padding:16px;display:grid;gap:10px;align-content:space-between}
+.quote p{font-size:.98rem}
+.quote p::before{content:"“"}.quote p::after{content:"”"}
+.empty{padding:18px;border-radius:12px;background:var(--surface-2);color:var(--muted)}
+
+footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
+#toTop{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:5;font:inherit;font-weight:600;font-size:.88rem;padding:10px 16px;border-radius:999px;border:1px solid var(--line);background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(10px);color:var(--fg);box-shadow:var(--shadow);cursor:pointer}
+#toTop:hover{border-color:var(--accent)}
+</style>
+</head>
+<body>
+
+
+<div class="topbar"><div class="wrap"><strong>Classroom lens</strong><span class="dot"></span><span>Information Systems</span><span class="dot"></span><span>Browser-only analysis</span></div></div>
+
+<main class="wrap">
+  <header class="hero">
+    <h1 id="top" tabindex="-1">Who holds the intelligence?</h1>
+    <p>A survey asked five open questions about AI sovereignty: who controls AI systems, the data they use, and the services we rely on. This dashboard turns the spreadsheet of answers into charts you can explore, and every chart lets you trace back to the original answers.</p>
+    <span class="badge" id="synthBadge" hidden>Synthetic classroom data</span>
+    <p class="small" id="synthNote" hidden></p>
+  </header>
+
+  <nav class="sections" aria-label="Sections">
+    <a href="#overview">Overview</a><a href="#privacy">Privacy</a><a href="#investment">AI investment</a><a href="#reliance">Everyday reliance</a><a href="#business">Business</a><a href="#definitions">Definitions</a><a href="#responses">Responses</a>
+  </nav>
+
+  <!-- 4 workbook -->
+  <section class="card block" id="workbook" aria-labelledby="wbH">
+    <div class="wb">
+      <div class="stack">
+        <div class="section-head"><span class="eyebrow">Workbook</span><h2 id="wbH">Load a survey spreadsheet</h2>
+          <p class="muted">The file is read inside your browser. Nothing is uploaded to a server, and no account is needed.</p></div>
+        <div class="drop" id="drop">
+          <p><b>Drag an .xlsx file here</b>, or choose one from your computer.</p>
+          <div class="row">
+            <label class="btn primary" for="fileIn">Upload workbook</label>
+            <input type="file" id="fileIn" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;width:1px;height:1px;opacity:0">
+            <button class="btn" id="demoBtn" type="button">Load demo</button>
+          </div>
+          <p class="small muted">Only Excel .xlsx files are supported. Other formats (.xls, .csv, .numbers) need to be saved as .xlsx first.</p>
+        </div>
+        <div id="wbMsg" role="status" aria-live="polite"></div>
+      </div>
+      <div class="stack">
+        <dl class="facts">
+          <dt>File</dt><dd id="fName">–</dd>
+          <dt>Worksheet</dt><dd><select id="sheetSel" aria-label="Worksheet"></select></dd>
+          <dt>Responses</dt><dd class="num" id="fRows">–</dd>
+          <dt>Missing answers</dt><dd class="num" id="fMiss">–</dd>
+          <dt>ID column</dt><dd id="fId">–</dd>
+        </dl>
+        <p class="small muted" id="sheetHint"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 5 explanation -->
+  <section class="card block explain" id="what" aria-labelledby="whatH">
+    <div class="section-head"><span class="eyebrow">Start here</span><h2 id="whatH">What data am I looking at?</h2></div>
+    <p id="whatSrc"></p>
+    <ul>
+      <li><b>Each spreadsheet row is one respondent.</b> We call that row a <b>response</b>.</li>
+      <li><b>Each question column holds that respondent’s answer.</b> One cell is one <b>answer</b>, so one response can supply up to five answers.</li>
+      <li>The dashboard adds counts, percentages, shorter headings, category labels and themes. It does <b>not</b> invent, correct or rewrite any original answer.</li>
+      <li>Administrative and scoring fields (timestamps, name, email, points, quiz feedback) are left out. The ID column is kept so you can trace each answer back to its row.</li>
+      <li>A <b>missing answer</b> is a blank cell in one of the five question columns. Blank points or feedback cells are not counted as missing and are never treated as zero scores.</li>
+      <li><b>How to explore:</b> read a chart’s question, click a bar, and the page jumps to the matching original answers in the response table.</li>
+    </ul>
+  </section>
+
+  <!-- 6 filters -->
+  <section class="card block filters" id="filters" aria-labelledby="filH">
+    <div class="section-head"><span class="eyebrow">Filters</span><h2 id="filH">Choose which respondents to look at</h2>
+      <p class="muted">Filters select <b>respondents</b>, not individual bars. Every chart, total, quotation, example and table below then uses only those people’s rows. Filters, search and a clicked bar all apply together.</p></div>
+    <div class="row">
+      <label class="f" for="fPriv">Privacy concern (Q3)<select id="fPriv"></select></label>
+      <label class="f" for="fAi">AI preference (Q4)<select id="fAi"></select></label>
+      <label class="f" for="fSearch">Search answers and IDs<input type="search" id="fSearch" placeholder="e.g. python, contract, 12"></label>
+      <button class="btn" id="resetBtn" type="button">Reset filters</button>
+    </div>
+    <p class="small muted">Search ignores capital letters and looks through the five answers and the response ID. It narrows the whole dashboard, not just the table. Reset filters clears the dropdowns, any clicked bar and the search box. It does not undo edited theme rules.</p>
+    <div class="status" id="status" role="status" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+  </section>
+
+  <!-- 7 overview -->
+  <section class="card block" id="overview" aria-labelledby="ovH">
+    <div class="section-head"><span class="eyebrow">Overview</span><h2 id="ovH">The current view at a glance</h2><p class="muted" id="ovDesc"></p></div>
+    <div class="kpis">
+      <div class="kpi"><div class="eyebrow">Selected responses</div><div class="v num" id="kSel">–</div><div class="small muted" id="kSelSub"></div></div>
+      <div class="kpi"><div class="eyebrow">Missing answers in view</div><div class="v num" id="kMiss">–</div><div class="small muted" id="kMissSub"></div></div>
+      <div class="kpi"><div class="eyebrow">Answers in view</div><div class="v num" id="kAns">–</div><div class="small muted">Non-blank cells across the five questions.</div></div>
+    </div>
+    <p class="small muted" style="margin-top:12px">Missing-answer counts refer to blank cells in the five survey questions only, not blank scoring fields.</p>
+    <h3 style="margin-top:20px;margin-bottom:10px">Three observations from this view</h3>
+    <ul class="obs" id="obs"></ul>
+    <p class="small muted" style="margin-top:10px">These describe patterns in the selected rows. They do not explain why people answered this way and should not be generalised beyond this dataset.</p>
+  </section>
+
+  <!-- 8 charts -->
+  <div class="grid2 block">
+    <section class="card chart" id="privacy" aria-labelledby="pH"></section>
+    <section class="card chart" id="investment" aria-labelledby="iH"></section>
+    <section class="card chart" id="reliance" aria-labelledby="rH"></section>
+    <section class="card chart" id="business" aria-labelledby="bH"></section>
+  </div>
+
+  <!-- 9 method -->
+  <section class="card block" id="method" aria-labelledby="mH">
+    <div class="section-head"><span class="eyebrow">Method</span><h2 id="mH">How answers become themes</h2>
+      <p class="muted">Questions 2 and 5 are free-text. To chart them, the dashboard sorts each answer into topic labels using simple keyword rules. Here is exactly how that works.</p></div>
+    <ol class="steps">
+      <li>A <b>theme</b> is a topic label added by the dashboard. It is not a survey question and not a column in the spreadsheet.</li>
+      <li>Theme grouping applies only to the written answers to <b>Question 2</b> (everyday reliance) and <b>Question 5</b> (business considerations).</li>
+      <li>Each theme has a list of keywords or phrases.</li>
+      <li>An answer matches a theme if it contains at least one listed phrase, ignoring capital letters. A phrase must start at the beginning of a word but may continue into a longer word: <code>translat</code> matches “Translating” and “translation”, and <code>law</code> matches “laws” but not “flawed”.</li>
+      <li>Each answer counts <b>once per matching theme</b>, even if several keywords from that theme appear in it.</li>
+      <li>One answer can match several themes, so theme percentages can add up to more than 100%.</li>
+      <li>A theme percentage is its matching-answer count divided by <b>all selected responses</b>. Responses with a missing answer stay in the denominator, so missing answers lower every theme’s percentage. They are shown as their own bar.</li>
+      <li><b>Unmatched</b> means the cell had an answer but it matched no theme keywords. <b>Missing answer</b> means the question cell was empty.</li>
+      <li>Keyword matching does not understand meaning, context or negation. “Not secure” still matches <code>secur</code>.</li>
+      <li>These are provisional groupings for class discussion. They are not a definitive qualitative analysis and not a judgement of whether an answer is correct.</li>
+    </ol>
+
+    <div class="card" style="margin-top:20px;box-shadow:none" id="worked"></div>
+
+    <details class="rules" id="rulesBox" style="margin-top:20px">
+      <summary>Inspect &amp; adjust classification rules</summary>
+      <div class="stack" style="margin-top:8px">
+        <p class="small">Each box lists the keywords for one theme, <b>separated by commas</b>. To add a word or phrase, type a comma and then the phrase. To remove one, delete it together with its comma. Then click <b>Apply theme rules</b>. Charts, examples, the worked example, observations and any active theme filter are recalculated. The original answers and the Excel workbook do not change. <b>Restore defaults</b> puts back the original keyword lists. Edits are kept only while this page is open; reloading the page restores the defaults.</p>
+        <h3>Question 2 · Everyday reliance themes</h3>
+        <div class="rulegrid" id="rulesQ2"></div>
+        <h3>Question 5 · Business consideration themes</h3>
+        <div class="rulegrid" id="rulesQ5"></div>
+        <div class="row"><button class="btn primary" id="applyRules" type="button">Apply theme rules</button><button class="btn" id="restoreRules" type="button">Restore defaults</button><span id="rulesMsg" class="small" role="status" aria-live="polite"></span></div>
+      </div>
+    </details>
+
+    <div style="margin-top:22px" class="stack">
+      <h3>Fixed rules for Questions 3 and 4</h3>
+      <p class="small">Privacy concern and AI preference answers are sorted with a separate set of <b>fixed</b> rules that cannot be edited on this page. They differ from the theme rules in one important way: each answer gets <b>exactly one</b> category. Rules are checked top to bottom and the <b>first match wins</b>, so the order matters. For example, uncertainty is checked first so that “I am unsure because I do not know where my data goes” is not counted as “not concerned”. Matching ignores capital letters and uses the same start-of-word rule as above. An answer that matches no rule goes to <b>Other / review</b>; a blank cell goes to <b>Missing answer</b>.</p>
+      <div class="grid2" id="fixedRules"></div>
+    </div>
+  </section>
+
+  <!-- 10 definitions -->
+  <section class="card block" id="definitions" aria-labelledby="dH"></section>
+
+  <!-- 11 responses -->
+  <section class="card block" id="responses" aria-labelledby="tH">
+    <div class="section-head"><span class="eyebrow">Evidence</span><h2 id="tH">Explore the responses</h2>
+      <p>Each row keeps one respondent’s five <b>original answers</b> together, exactly as written. These are not the dashboard’s category labels or themes. The five answer columns come from the five survey questions, with shortened headings explained in the guide below.</p></div>
+    <div class="tbl-wrap" style="margin-bottom:16px"><table id="guide"><thead><tr><th>Table heading</th><th>Full question in the current worksheet</th><th>Excel column</th></tr></thead><tbody></tbody></table></div>
+    <ul class="small" style="margin:0 0 14px;padding-left:1.2em;display:grid;gap:4px">
+      <li id="idExplain"></li>
+      <li>An ellipsis (…) means the preview has been shortened. <b>Read full answer</b> reveals the complete answer.</li>
+      <li><span class="missing">Missing answer</span> means the question cell was blank.</li>
+      <li>Names, email, timestamps, points and feedback are not shown.</li>
+    </ul>
+    <p class="status" id="tblStatus" style="margin-bottom:10px"></p>
+    <div class="tbl-wrap"><table class="rt" id="rtable"><thead></thead><tbody></tbody></table></div>
+  </section>
+</main>
+
+<footer class="wrap">Built for an Information Systems classroom demonstration. All analysis runs in your browser; the workbook never leaves your device.</footer>
+<button id="toTop" type="button" aria-label="Back to top">↑ Back to top</button>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script>
+const DEMO_B64 = "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";
+const DEMO_NAME = "AI_Sovereignty_35_Synthetic_Responses.xlsx";
+
+/* ---------- question detection ---------- */
+const QMETA = [
+  {n:1, short:'Q1 · AI sovereignty', subject:'The question asking respondents to define AI sovereignty',
+   match:h=>/sovereign/i.test(h)&&/(defin|mean|describe)/i.test(h)},
+  {n:2, short:'Q2 · Everyday reliance', subject:'The question about difficult tasks if foreign AI apps were banned',
+   match:h=>/\bban/i.test(h)&&/task/i.test(h)},
+  {n:3, short:'Q3 · Privacy concern', subject:'The question about ownership of personal data',
+   match:h=>/(worry|concern)/i.test(h)&&/data/i.test(h)},
+  {n:4, short:'Q4 · AI preference', subject:'The question about foreign providers versus local investment',
+   match:h=>/foreign/i.test(h)&&/local/i.test(h)&&/(rely|invest|build)/i.test(h)&&!/(boss|business)/i.test(h)},
+  {n:5, short:'Q5 · Business considerations', subject:'The question about local or foreign AI in an Australian business',
+   match:h=>/(business|boss|employer)/i.test(h)&&/(local|foreign)/i.test(h)},
+];
+const isScoring = h=>/^\s*(points|feedback)\b/i.test(h);
+
+/* ---------- fixed rules ---------- */
+const PRIV_RULES = [
+  {key:'unsure', label:'Unsure', kw:['unsure','not sure','do not know','don\'t know','no idea']},
+  {key:'none', label:'Not concerned', kw:['do not worry','don\'t worry','not worried','not concerned','never worry','no concern']},
+  {key:'very', label:'Very concerned', kw:['a lot','very','extremely','highly','a great deal']},
+  {key:'mod', label:'Moderately concerned', kw:['moderate','somewhat','fairly']},
+  {key:'slight', label:'Slightly concerned', kw:['a little','slightly','a bit','minor']},
+];
+const PRIV_ORDER = ['none','slight','mod','very','unsure','other','missing'];
+const AI_RULES = [
+  {key:'unsure', label:'Unsure', kw:['unsure','not sure','do not know','don\'t know','undecided']},
+  {key:'both', label:'Use both local and foreign AI', kw:['use both','both','mix of','combination','hybrid']},
+  {key:'some', label:'Develop some local capability while retaining foreign access', kw:['not try to build everything','not build everything','some local','partly','while keeping','retain access','keep access']},
+  {key:'local', label:'Build local AI', kw:['build our own','build its own','build local','local ai','own ai','invest in local']},
+  {key:'foreign', label:'Rely on foreign AI', kw:['rely on foreign','foreign ai provider','foreign provider','foreign tech','rely on overseas']},
+];
+const AI_ORDER = ['both','some','local','foreign','unsure','other','missing'];
+const LBL = {other:'Other / review', missing:'Missing answer', unmatched:'Unmatched'};
+
+/* ---------- editable theme rules ---------- */
+const DEFAULT_THEMES = {
+  2: [
+    {label:'Coding and technical tools', kw:['python','debug','code','coding','sql','html','css','error message','software','spreadsheet','formula','database','prototype','query']},
+    {label:'Understanding course material', kw:['understand','explain','explanation','lecture reading','readings','concept','vocabulary','framework','instructions','hint','exercise']},
+    {label:'Writing and communication', kw:['writing','essay','grammar','email','message','outline','draft','slides','clarity','argument','report','rephras']},
+    {label:'Translation and language', kw:['translat','mandarin','english','language','transcrib']},
+    {label:'Study preparation', kw:['exam','flashcard','practice question','revision','schedule','tutorial','smaller steps','practis','notes']},
+    {label:'Research and ideas', kw:['research','sources','brainstorm','ideas','examples','search','compar']},
+    {label:'Limited reliance', kw:['barely use','not affect','not think a ban','could return','mostly use the textbook','ask friends']},
+  ],
+  5: [
+    {label:'Privacy and data handling', kw:['personal','privacy','customer','data','stored','retention','prompts','training','deleted','leaves australia']},
+    {label:'Security and confidentiality', kw:['secur','confidential','secret','leak','access control','permission','sensitive','competitor']},
+    {label:'Legal obligations', kw:['legal','law','regulat','contract','compliance','courts','government client','procurement','audit','rules']},
+    {label:'Supplier dependence', kw:['dependent','depend','one provider','backup','change suppliers','lose access','cut off','pricing','move our data','out of business','subcontractor']},
+    {label:'Reliability and continuity', kw:['reliab','outage','disrupt','essential services','continuity','blocked','goes wrong']},
+    {label:'Cost and performance', kw:['cost','price','accuracy','accurate','performance']},
+    {label:'Local context and jobs', kw:['australian jobs','jobs','australian context','australian regulations','australian support','local tool','communication']},
+  ]
+};
+const clone = o=>JSON.parse(JSON.stringify(o));
+
+/* ---------- state ---------- */
+const S = {
+  wb:null, fileName:'', sheet:'', data:null,
+  themes: clone(DEFAULT_THEMES),
+  f:{priv:'', ai:'', search:'', click:null},
+};
+
+/* ---------- helpers ---------- */
+const $ = id=>document.getElementById(id);
+const esc = s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const reEsc = s=>s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&');
+const kwRe = kw=>new RegExp('(?:^|[^\\p{L}\\p{N}_])'+reEsc(kw.toLowerCase()), 'iu');
+const has = (text,kw)=>kwRe(kw).test(text.replace(/[’‘]/g,"'"));
+const pct = (n,d)=>d? Math.round(n/d*100)+'%' : '–';
+const plural = (n,w,p)=>n+' '+(n===1?w:(p||w+'s'));
+function firstMatch(text, rules){
+  if(!text) return {key:'missing', kw:null};
+  for(const r of rules){ for(const k of r.kw){ if(has(text,k)) return {key:r.key, kw:k}; } }
+  return {key:'other', kw:null};
+}
+function themeMatch(text, themes){
+  if(!text) return {missing:true, list:[]};
+  const list=[];
+  themes.forEach((t,i)=>{ const hits=t.kw.filter(k=>has(text,k)); if(hits.length) list.push({i, label:t.label, hits}); });
+  return {missing:false, list};
+}
+function labelOf(rules,key){ const r=rules.find(r=>r.key===key); return r? r.label : LBL[key]; }
+function joinAnd(a){ return a.length<=1? (a[0]||'') : a.slice(0,-1).join(', ')+' and '+a[a.length-1]; }
+
+/* ---------- workbook loading ---------- */
+function b64ToBuf(b){ const s=atob(b); const u=new Uint8Array(s.length); for(let i=0;i<s.length;i++)u[i]=s.charCodeAt(i); return u.buffer; }
+function showMsg(html, kind){ $('wbMsg').innerHTML = html? `<div class="msg ${kind||'err'}">${html}</div>` : ''; }
+
+function loadBuffer(buf, name){
+  let wb;
+  if(typeof XLSX==='undefined'){ showMsg('The spreadsheet reader did not load. Check your internet connection and reload the page.'); return false; }
+  try{ wb = XLSX.read(buf, {type:'array'}); }
+  catch(e){ showMsg(`<b>${esc(name)}</b> could not be read. It may be damaged, password-protected, or not really an Excel file. Try opening it in Excel and saving it again as .xlsx.`); return false; }
+  if(!wb.SheetNames.length){ showMsg(`<b>${esc(name)}</b> has no worksheets.`); return false; }
+  // choose first sheet with all five questions
+  let pick = wb.SheetNames.find(n=>!parseSheet(wb,n).error) || wb.SheetNames[0];
+  const parsed = parseSheet(wb,pick);
+  if(parsed.error){
+    showMsg(`<b>${esc(name)}</b> was opened, but none of its worksheets contains all five survey questions. ${parsed.error} The dashboard is still showing the previous data.`);
+    return false;
+  }
+  S.wb=wb; S.fileName=name; S.sheet=pick; S.data=parsed;
+  S.f={priv:'',ai:'',search:'',click:null}; $('fSearch').value='';
+  const sel=$('sheetSel'); sel.innerHTML = wb.SheetNames.map(n=>`<option ${n===pick?'selected':''}>${esc(n)}</option>`).join('');
+  sel.disabled = wb.SheetNames.length<2;
+  $('sheetHint').textContent = wb.SheetNames.length>1 ? `This workbook has ${wb.SheetNames.length} worksheets. Choose which one to analyse.` : 'This workbook has one worksheet.';
+  showMsg(`Loaded <b>${esc(name)}</b> · worksheet <b>${esc(pick)}</b> · ${plural(parsed.rows.length,'response')}.`, 'ok');
+  render();
+  return true;
+}
+
+function parseSheet(wb, name){
+  const ws = wb.Sheets[name];
+  if(!ws || !ws['!ref']) return {error:`Worksheet “${name}” is empty.`};
+  const range = XLSX.utils.decode_range(ws['!ref']);
+  const aoa = XLSX.utils.sheet_to_json(ws, {header:1, defval:'', blankrows:true, raw:false});
+  let hRow=-1, qCols=null, best=null;
+  for(let r=0; r<Math.min(aoa.length,15); r++){
+    const hdr = aoa[r].map(v=>String(v).trim());
+    const cols = QMETA.map(q=>hdr.findIndex(h=>h && !isScoring(h) && q.match(h)));
+    const found = cols.filter(c=>c>=0).length;
+    if(!best || found>best.found) best={r,cols,found,hdr};
+    if(found===5 && new Set(cols).size===5){ hRow=r; qCols=cols; break; }
+  }
+  if(hRow<0){
+    const miss = best? QMETA.filter((q,i)=>best.cols[i]<0).map(q=>`Question ${q.n} (${q.subject.replace(/^The question /,'').replace(/^asking respondents /,'')})`) : [];
+    return {error:`In worksheet “${name}”, the dashboard could not find a column header for: ${miss.length? joinAnd(miss) : 'the survey questions'}. Column headers must contain the question wording.`};
+  }
+  const hdr = aoa[hRow].map(v=>String(v).trim());
+  const idCol = hdr.findIndex(h=>/^(id|response id|respondent id)$/i.test(h));
+  const colLetter = c=>XLSX.utils.encode_col(range.s.c + c);
+  const rows=[]; let synthetic=/synthetic/i.test(S.pendingName||'');
+  for(let r=hRow+1; r<aoa.length; r++){
+    const line=aoa[r]||[];
+    if(!synthetic && line.some(v=>/synthetic data/i.test(String(v)))) synthetic=true;
+    const ans = qCols.map(c=>String(line[c]??'').trim());
+    const idv = idCol>=0? String(line[idCol]??'').trim() : '';
+    if(!idv && ans.every(a=>!a)) continue;
+    rows.push({id: idv || ('D'+(rows.length+1)), genId: !idv, excelRow: range.s.r + r + 1, ans});
+  }
+  return {
+    headers: qCols.map(c=>hdr[c]), cols: qCols.map(colLetter), idCol: idCol>=0? colLetter(idCol) : null,
+    idHeader: idCol>=0? hdr[idCol] : null, rows, synthetic, total: rows.length,
+    missingTotal: rows.reduce((s,r)=>s+r.ans.filter(a=>!a).length,0)
+  };
+}
+
+/* ---------- derive & filter ---------- */
+function derive(){
+  const d=S.data;
+  d.rows.forEach(r=>{
+    r.priv = firstMatch(r.ans[2], PRIV_RULES);
+    r.ai = firstMatch(r.ans[3], AI_RULES);
+    r.t2 = themeMatch(r.ans[1], S.themes[2]);
+    r.t5 = themeMatch(r.ans[4], S.themes[5]);
+  });
+}
+function themeKeys(t){ return t.missing? ['missing'] : (t.list.length? t.list.map(x=>'t'+x.i) : ['unmatched']); }
+function clickTest(r,c){
+  if(!c) return true;
+  if(c.q===3) return r.priv.key===c.key;
+  if(c.q===4) return r.ai.key===c.key;
+  if(c.q===2) return themeKeys(r.t2).includes(c.key);
+  if(c.q===5) return themeKeys(r.t5).includes(c.key);
+  return true;
+}
+function selected(){
+  const f=S.f, s=f.search.trim().toLowerCase();
+  return S.data.rows.filter(r=>
+    (!f.priv || r.priv.key===f.priv) && (!f.ai || r.ai.key===f.ai) &&
+    (!s || r.id.toLowerCase().includes(s) || r.ans.some(a=>a.toLowerCase().includes(s))) &&
+    clickTest(r,f.click));
+}
+function clickLabel(c){
+  if(c.q===3) return labelOf(PRIV_RULES,c.key);
+  if(c.q===4) return labelOf(AI_RULES,c.key);
+  if(c.key==='missing'||c.key==='unmatched') return LBL[c.key];
+  return S.themes[c.q][+c.key.slice(1)]?.label || c.key;
+}
+
+/* ---------- render ---------- */
+function render(){
+  const d=S.data; if(!d) return;
+  derive();
+  // if a clicked theme no longer exists, drop it
+  if(S.f.click && (S.f.click.q===2||S.f.click.q===5) && S.f.click.key.startsWith('t') && !S.themes[S.f.click.q][+S.f.click.key.slice(1)]) S.f.click=null;
+  const sel=selected(), N=sel.length;
+
+  // workbook facts
+  $('fName').textContent=S.fileName; $('fRows').textContent=d.total;
+  $('fMiss').textContent=`${d.missingTotal} blank question ${d.missingTotal===1?'cell':'cells'}`;
+  $('fId').textContent = d.idCol? `“${d.idHeader}” · column ${d.idCol}` : 'No ID column found; the dashboard assigns D1, D2, … in row order';
+  $('synthBadge').hidden=$('synthNote').hidden=!d.synthetic;
+  $('synthNote').textContent = `This workbook is marked as synthetic: its ${d.total} responses are made-up teaching examples written for class. They are not findings about real students.`;
+  $('whatSrc').innerHTML = `You are looking at <b>${esc(S.fileName)}</b>, worksheet <b>${esc(S.sheet)}</b>: ${plural(d.total,'response')} with answers to five survey questions (columns ${d.cols.join(', ')}).`;
+
+  // filter dropdowns
+  const priv=$('fPriv'), ai=$('fAi');
+  priv.innerHTML='<option value="">All privacy answers</option>'+PRIV_ORDER.map(k=>`<option value="${k}" ${S.f.priv===k?'selected':''}>${esc(labelOf(PRIV_RULES,k))}</option>`).join('');
+  ai.innerHTML='<option value="">All AI preferences</option>'+AI_ORDER.map(k=>`<option value="${k}" ${S.f.ai===k?'selected':''}>${esc(labelOf(AI_RULES,k))}</option>`).join('');
+
+  // status & chips
+  const chips=[];
+  if(S.f.priv) chips.push(`Privacy: ${labelOf(PRIV_RULES,S.f.priv)}`);
+  if(S.f.ai) chips.push(`AI preference: ${labelOf(AI_RULES,S.f.ai)}`);
+  if(S.f.search.trim()) chips.push(`Search: “${S.f.search.trim()}”`);
+  if(S.f.click) chips.push(`Clicked bar · Q${S.f.click.q}: ${clickLabel(S.f.click)}`);
+  $('status').innerHTML = `Showing <b class="num">${N}</b> of <span class="num">${d.total}</span> responses.` + (chips.length? '' : ' No filters are active.');
+  $('chips').innerHTML = chips.map(c=>`<span class="chip">${esc(c)}</span>`).join('');
+
+  // overview
+  const missSel = sel.reduce((s,r)=>s+r.ans.filter(a=>!a).length,0);
+  $('kSel').textContent=N; $('kSelSub').textContent=`of ${d.total} responses in the worksheet`;
+  $('kMiss').textContent=missSel; $('kMissSub').textContent=`${d.missingTotal} blank question cells in the whole worksheet`;
+  $('kAns').textContent=N*5-missSel;
+  $('ovDesc').textContent = `${d.synthetic?'A synthetic classroom dataset':'A survey dataset'} of ${d.total} responses to five open questions about AI sovereignty, read from ${S.fileName} (${S.sheet}).`;
+  renderObs(sel);
+
+  renderCatChart('privacy', 3, 'pH', 'Privacy concern', sel, PRIV_RULES, PRIV_ORDER, r=>r.priv);
+  renderCatChart('investment', 4, 'iH', 'Local versus foreign AI', sel, AI_RULES, AI_ORDER, r=>r.ai);
+  renderThemeChart('reliance', 2, 'rH', 'Everyday reliance on AI', sel, r=>r.t2);
+  renderThemeChart('business', 5, 'bH', 'Business considerations', sel, r=>r.t5);
+  renderWorked(sel); renderRuleBoxes(); renderFixed();
+  renderDefs(sel); renderTable(sel);
+}
+
+function countCat(sel, get, order){ const c={}; order.forEach(k=>c[k]=0); sel.forEach(r=>c[get(r).key]++); return c; }
+function countTheme(sel, get, q){
+  const n=S.themes[q].length, c={}; for(let i=0;i<n;i++)c['t'+i]=0; c.unmatched=0; c.missing=0;
+  sel.forEach(r=>themeKeys(get(r)).forEach(k=>c[k]++)); return c;
+}
+function topOf(entries){ // entries [{label,n}]
+  const max=Math.max(0,...entries.map(e=>e.n)); if(!max) return null;
+  return {n:max, labels:entries.filter(e=>e.n===max).map(e=>e.label)};
+}
+function topSentence(t, N, noun){
+  if(!t) return null;
+  return t.labels.length>1
+    ? `${joinAnd(t.labels.map(l=>'“'+l+'”'))} tie as the most common ${noun}, with ${t.n} of ${N} selected responses each (${pct(t.n,N)})`
+    : `“${t.labels[0]}” is the most common ${noun}: ${t.n} of ${N} selected responses (${pct(t.n,N)})`;
+}
+function renderObs(sel){
+  const N=sel.length, ul=$('obs');
+  if(!N){ ul.innerHTML='<li>No responses match the current filters, so there is nothing to observe. Use Reset filters to see all responses.</li>'; return; }
+  const pc=countCat(sel,r=>r.priv,PRIV_ORDER), ac=countCat(sel,r=>r.ai,AI_ORDER), tc=countTheme(sel,r=>r.t2,2);
+  const pt=topOf(PRIV_ORDER.filter(k=>k!=='missing'&&k!=='other').map(k=>({label:labelOf(PRIV_RULES,k),n:pc[k]})));
+  const at=topOf(AI_ORDER.filter(k=>k!=='missing'&&k!=='other').map(k=>({label:labelOf(AI_RULES,k),n:ac[k]})));
+  const tt=topOf(S.themes[2].map((t,i)=>({label:t.label,n:tc['t'+i]})));
+  const items=[
+    [topSentence(pt,N,'privacy summary (Q3)'),'#privacy','privacy chart'],
+    [topSentence(at,N,'AI investment position (Q4)'),'#investment','AI investment chart'],
+    [tt? topSentence(tt,N,'everyday-reliance theme (Q2)')+'. One answer can match several themes' : null,'#reliance','everyday reliance chart'],
+  ];
+  ul.innerHTML = items.map(([s,href,name])=> s
+    ? `<li>${esc(s)}. <a href="${href}">See the ${name}</a>.</li>`
+    : `<li>No answers in this view fall into a category for this question. <a href="${href}">See the ${name}</a>.</li>`).join('');
+}
+
+function bar(q,key,label,n,N,neutral){
+  const on = S.f.click && S.f.click.q===q && S.f.click.key===key;
+  const w = N? (n/N*100) : 0;
+  return `<button class="bar${neutral?' neutral':''}${n?'':' zero'}" type="button" data-q="${q}" data-key="${key}" aria-pressed="${on}" aria-label="${esc(label)}: ${n} of ${N} selected responses, ${pct(n,N)}. Click to filter.">
+    <span class="bar-label">${esc(label)}</span><span class="bar-track"><span class="bar-fill" style="width:${w}%"></span></span><span class="bar-val">${n} · ${pct(n,N)}</span></button>`;
+}
+function sourceBlock(q, title, hid){
+  const d=S.data;
+  return `<div class="section-head" style="margin:0"><span class="eyebrow">Source · Survey Question ${q}</span><h2 id="${hid}">${esc(title)}</h2></div>
+    <p class="qtext">“${esc(d.headers[q-1])}”</p>
+    <p class="small muted">${esc(S.fileName)} · worksheet ${esc(S.sheet)} · Excel column <b class="mono">${d.cols[q-1]}</b></p>`;
+}
+const clickHelp = `<p><b>Clicking a bar</b> keeps only respondents in that category across the whole dashboard and jumps to their original answers. Click the same bar again, or use Reset filters, to clear it.</p>`;
+
+function renderCatChart(id,q,hid,title,sel,rules,order,get){
+  const N=sel.length, c=countCat(sel,get,order), miss=c.missing, answered=N-miss;
+  const neutral=k=>['unsure','other','missing'].includes(k);
+  const t=topOf(order.filter(k=>!neutral(k)).map(k=>({label:labelOf(rules,k),n:c[k]})));
+  const method = q===3
+    ? `Labels such as “Moderately concerned” are summaries added by the dashboard. They are not extra spreadsheet columns. Each answer gets one label using the fixed wording rules shown in <a href="#method">How answers become themes</a>. Bars run from low to high concern; uncertainty, unrecognised wording and blank cells are kept as separate bars.`
+    : `These labels summarise the position each answer expresses. They are not rankings or correctness scores. Mixed and uncertain positions keep their own bars instead of being forced into local versus foreign. Each answer gets one label using the fixed rules in <a href="#method">How answers become themes</a>; inspect the original wording in the response table.`;
+  let interp;
+  if(!N) interp='No responses match the current filters.';
+  else if(!t) interp='None of the selected answers matched a substantive category.';
+  else interp = topSentence(t,N, q===3?'privacy summary':'position') + `. This describes these answers only; it does not explain why respondents hold these views.`;
+  $(id).innerHTML = sourceBlock(q,title,hid) +
+    `<div class="bars" role="group" aria-label="${esc(title)} categories">${order.map(k=>bar(q,k,labelOf(rules,k),c[k],N,neutral(k))).join('')}</div>
+    <p class="small"><b>Counts</b> are numbers of selected responses. <b>Percentages</b> use all <b class="num">${N}</b> selected responses as the denominator (answered <b class="num">${answered}</b>, missing <b class="num">${miss}</b>). Each response appears in exactly one bar, so the bars add up to ${N}.</p>
+    <div class="meta"><p>${method}</p>${clickHelp}</div>
+    <p class="interp"><b>Reading this chart:</b> ${esc(interp)}</p>`;
+}
+
+function renderThemeChart(id,q,hid,title,sel,get){
+  const N=sel.length, c=countTheme(sel,get,q), themes=S.themes[q], miss=c.missing, answered=N-miss;
+  const tagged = sel.filter(r=>get(r).list.length).length;
+  const multi = sel.filter(r=>get(r).list.length>1).length;
+  const t=topOf(themes.map((th,i)=>({label:th.label,n:c['t'+i]})));
+  // examples: first matching answer in worksheet order per theme
+  const ex = themes.map((th,i)=>{ const r=sel.find(r=>get(r).list.some(x=>x.i===i)); return r? {th:th.label, r, hits:get(r).list.find(x=>x.i===i).hits} : null; }).filter(Boolean);
+  let interp;
+  if(!N) interp='No responses match the current filters.';
+  else if(!t) interp='None of the selected answers matched a theme keyword.';
+  else interp = topSentence(t,N,'theme') + `. ${multi} of ${answered} answered cells matched more than one theme. A keyword match shows that a topic is mentioned, not what the respondent’s position on it is.`;
+  const extraNote = q===5 ? ' A theme such as “Security and confidentiality” means security is mentioned; it does not mean local providers are automatically safe or that the respondent believes so.' : '';
+  $(id).innerHTML = sourceBlock(q,title,hid) +
+    `<div class="bars" role="group" aria-label="${esc(title)} themes">${themes.map((th,i)=>bar(q,'t'+i,th.label,c['t'+i],N,false)).join('')}${bar(q,'unmatched',LBL.unmatched,c.unmatched,N,true)}${bar(q,'missing',LBL.missing,c.missing,N,true)}</div>
+    <p class="small"><b>Counts</b> are answers matching each theme. <b>Percentages</b> divide by all <b class="num">${N}</b> selected responses (answered <b class="num">${answered}</b>, missing <b class="num">${miss}</b>). ${tagged} answers matched at least one theme; because one answer can match several themes, percentages can add up to more than 100%.</p>
+    <div class="meta"><p>Themes are <b>provisional</b> keyword groupings added by the dashboard, explained step by step in <a href="#method">How answers become themes</a>.${extraNote}</p>${clickHelp}</div>
+    <div class="examples"><p class="small muted"><b>Example answers.</b> For each theme, the example is the <b>first matching answer in worksheet order</b> within the current view. It is one illustration, not a separate dataset, and it does not represent every answer in that theme.</p>
+      ${ex.length? ex.map(e=>`<blockquote><b>${esc(e.th)}</b> · ID ${esc(e.r.id)}, row ${e.r.excelRow} · matched <span class="mono">${esc(e.hits.join(', '))}</span><br>“${esc(e.r.ans[q-1])}”</blockquote>`).join('') : '<p class="empty">No theme has a matching answer in this view.</p>'}
+    </div>
+    <p class="interp"><b>Reading this chart:</b> ${esc(interp)}</p>`;
+}
+
+function highlight(text, hits){
+  let out=esc(text);
+  hits.forEach(k=>{ out=out.replace(new RegExp('(^|[^\\p{L}\\p{N}_])('+reEsc(esc(k))+')','giu'),'$1<mark>$2</mark>'); });
+  return out;
+}
+function renderWorked(sel){
+  const box=$('worked');
+  let pick=null;
+  for(const q of [2,5]){ const get=q===2?r=>r.t2:r=>r.t5; const r=sel.find(r=>get(r).list.length>1); if(r){pick={q,r,t:get(r)};break;} }
+  if(!pick) for(const q of [2,5]){ const get=q===2?r=>r.t2:r=>r.t5; const r=sel.find(r=>get(r).list.length); if(r){pick={q,r,t:get(r)};break;} }
+  if(!pick){ box.innerHTML='<h3>Worked example</h3><p class="empty" style="margin-top:10px">The current view has no Question 2 or Question 5 answer that matches a theme, so there is no example to show. Try Reset filters.</p>'; return; }
+  const {q,r,t}=pick, allHits=t.list.flatMap(x=>x.hits);
+  box.innerHTML = `<div class="worked"><h3>Worked example from the current view</h3>
+    <p class="small muted">Chosen automatically: the first selected response, in worksheet order, whose Question 2 answer matches two or more themes (or Question 5 if none does; or a single-theme match if no answer has several).</p>
+    <dl class="facts">
+      <dt>Question</dt><dd>Question ${q} · ${esc(QMETA[q-1].short)} (column ${S.data.cols[q-1]})</dd>
+      <dt>Response</dt><dd>ID ${esc(r.id)} · Excel row ${r.excelRow}</dd>
+      <dt>Original answer</dt><dd style="font-weight:400">“${highlight(r.ans[q-1], allHits)}”</dd>
+      <dt>Matched keywords</dt><dd>${t.list.map(x=>`${esc(x.label)}: <span class="mono">${esc(x.hits.join(', '))}</span>`).join('<br>')}</dd>
+      <dt>Assigned themes</dt><dd>${esc(joinAnd(t.list.map(x=>x.label)))}</dd>
+    </dl>
+    <p class="small">How it counts: this one answer adds <b>1</b> to ${t.list.length===1?'the bar for this theme':'<b>each</b> of these '+t.list.length+' theme bars'}${t.list.some(x=>x.hits.length>1)?', even where a theme matched more than one keyword':''}. It still counts as one response in the denominator.</p></div>`;
+}
+
+function renderRuleBoxes(){
+  [2,5].forEach(q=>{
+    const host=$('rulesQ'+q);
+    if(host.dataset.built==='1' && host.dataset.sig===JSON.stringify(S.themes[q])) return;
+    host.innerHTML = S.themes[q].map((t,i)=>`<label class="f" for="rule${q}_${i}">${esc(t.label)}<textarea id="rule${q}_${i}" data-q="${q}" data-i="${i}">${esc(t.kw.join(', '))}</textarea></label>`).join('');
+    host.dataset.built='1'; host.dataset.sig=JSON.stringify(S.themes[q]);
+  });
+}
+function renderFixed(){
+  const host=$('fixedRules'); if(host.dataset.built) return;
+  const tbl=(title,rules)=>`<div class="tbl-wrap"><table><thead><tr><th>Order</th><th>${title} label</th><th>Answer contains any of</th></tr></thead><tbody>
+    ${rules.map((r,i)=>`<tr><td class="num">${i+1}</td><td>${esc(r.label)}</td><td class="mono">${esc(r.kw.join(', '))}</td></tr>`).join('')}
+    <tr><td class="num">–</td><td>Other / review</td><td>Answered, but no rule above matched</td></tr><tr><td class="num">–</td><td>Missing answer</td><td>Blank cell</td></tr></tbody></table></div>`;
+  host.innerHTML = `<div><p class="small" style="margin-bottom:8px"><b>Question 3 · Privacy concern</b></p>${tbl('Privacy',PRIV_RULES)}</div><div><p class="small" style="margin-bottom:8px"><b>Question 4 · AI preference</b></p>${tbl('Preference',AI_RULES)}</div>`;
+  host.dataset.built='1';
+}
+
+function renderDefs(sel){
+  const d=S.data, host=$('definitions');
+  const seen=new Map();
+  sel.forEach(r=>{ const a=r.ans[0]; if(a && !seen.has(a)) seen.set(a,r); });
+  const blanks = sel.filter(r=>!r.ans[0]).length;
+  host.innerHTML = `<div class="section-head"><span class="eyebrow">Source · Survey Question 1</span><h2 id="dH">What does AI sovereignty mean?</h2>
+    <p class="qtext">“${esc(d.headers[0])}”</p>
+    <p class="small muted">${esc(S.fileName)} · worksheet ${esc(S.sheet)} · Excel column <b class="mono">${d.cols[0]}</b></p>
+    <p>These quotation cards are <b>original answers to Question 1</b>${d.synthetic?' (fictional examples in this demonstration workbook)':''}. They are not official definitions, and the website does not write or endorse them. Different interpretations and uncertain answers are kept as written. No answer is scored as right or wrong, because no marking rubric was supplied.</p>
+    <p class="small muted">Selection rule: one card per distinct answer, in worksheet order, labelled with the first response ID and Excel row that gave it. The number of cards does not show how common an interpretation is; repeated answers are still listed in the response table. Blank answers have no card. The cards change when the filters change.</p></div>
+    <p class="small" style="margin-bottom:12px"><b class="num">${seen.size}</b> distinct answers from <b class="num">${sel.length}</b> selected responses${blanks? `; ${blanks} blank`:''}.</p>
+    ${seen.size? `<div class="quotes">${[...seen.values()].map(r=>`<figure class="quote" style="margin:0"><p>${esc(r.ans[0])}</p><figcaption class="small muted">ID ${esc(r.id)} · Excel row ${r.excelRow}</figcaption></figure>`).join('')}</div>`
+      : '<p class="empty">No Question 1 answers in the current view.</p>'}`;
+}
+
+const PREV=110;
+function cell(a,key){
+  if(!a) return '<span class="missing">Missing answer</span>';
+  if(a.length<=PREV) return esc(a);
+  return `<span class="pv">${esc(a.slice(0,PREV).replace(/\s+\S*$/,''))}…</span><span class="full" hidden>${esc(a)}</span><br><button type="button" class="linkbtn" data-toggle="${key}" aria-expanded="false">Read full answer</button>`;
+}
+function renderTable(sel){
+  const d=S.data;
+  $('guide').querySelector('tbody').innerHTML = QMETA.map((q,i)=>`<tr><td><b>${esc(q.short)}</b></td><td>${esc(d.headers[i])}</td><td class="mono">${d.cols[i]}</td></tr>`).join('');
+  $('idExplain').innerHTML = d.idCol
+    ? `<b>ID</b> is the workbook’s own “${esc(d.idHeader)}” value (column ${d.idCol}). <b>Excel row</b> is the row number in worksheet ${esc(S.sheet)}, so you can find the original cells.`
+    : `This worksheet has no ID column, so the dashboard assigns IDs D1, D2, … in row order. <b>Excel row</b> is the real row number in worksheet ${esc(S.sheet)}.`;
+  $('rtable').querySelector('thead').innerHTML = `<tr><th>ID</th><th>Excel row</th>${QMETA.map(q=>`<th>${esc(q.short)}</th>`).join('')}</tr>`;
+  $('tblStatus').innerHTML = `<b class="num">${sel.length}</b> of ${d.total} responses shown${S.f.click||S.f.priv||S.f.ai||S.f.search.trim()?' (filtered)':''}.`;
+  $('rtable').querySelector('tbody').innerHTML = sel.length
+    ? sel.map(r=>`<tr><td class="id num">${esc(r.id)}</td><td class="id num">${r.excelRow}</td>${r.ans.map((a,i)=>`<td>${cell(a,r.excelRow+'_'+i)}</td>`).join('')}</tr>`).join('')
+    : `<tr><td colspan="7"><p class="empty">No responses match the current filters and search. Use Reset filters to show all ${d.total} responses.</p></td></tr>`;
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click', e=>{
+  const b=e.target.closest('.bar');
+  if(b){
+    const q=+b.dataset.q, key=b.dataset.key;
+    S.f.click = (S.f.click && S.f.click.q===q && S.f.click.key===key)? null : {q,key};
+    render();
+    if(S.f.click) $('responses').scrollIntoView({block:'start'});
+    else { const again=document.querySelector(`.bar[data-q="${q}"][data-key="${key}"]`); again&&again.focus(); }
+    return;
+  }
+  const t=e.target.closest('[data-toggle]');
+  if(t){ const td=t.closest('td'), open=t.getAttribute('aria-expanded')==='true';
+    td.querySelector('.pv').hidden=!open; td.querySelector('.full').hidden=open;
+    t.setAttribute('aria-expanded',String(!open)); t.textContent=open?'Read full answer':'Show shorter preview'; }
+});
+$('fPriv').addEventListener('change',e=>{S.f.priv=e.target.value;render();});
+$('fAi').addEventListener('change',e=>{S.f.ai=e.target.value;render();});
+let st; $('fSearch').addEventListener('input',e=>{clearTimeout(st); st=setTimeout(()=>{S.f.search=e.target.value;render();},150);});
+$('resetBtn').addEventListener('click',()=>{S.f={priv:'',ai:'',search:'',click:null};$('fSearch').value='';render();});
+$('sheetSel').addEventListener('change',e=>{
+  const name=e.target.value, p=parseSheet(S.wb,name);
+  if(p.error){ showMsg(p.error+` The dashboard is still showing worksheet “${esc(S.sheet)}”.`); e.target.value=S.sheet; return; }
+  S.sheet=name; S.data=p; S.f={priv:'',ai:'',search:'',click:null}; $('fSearch').value='';
+  showMsg(`Switched to worksheet <b>${esc(name)}</b> · ${plural(p.rows.length,'response')}.`,'ok'); render();
+});
+$('applyRules').addEventListener('click',()=>{
+  [2,5].forEach(q=>S.themes[q].forEach((t,i)=>{ t.kw=$('rule'+q+'_'+i).value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean); }));
+  render(); $('rulesMsg').textContent='Theme rules applied. Charts, examples and filters were recalculated.';
+});
+$('restoreRules').addEventListener('click',()=>{ S.themes=clone(DEFAULT_THEMES); render(); $('rulesMsg').textContent='Default theme rules restored.'; });
+
+function readFile(file){
+  if(!file) return;
+  if(!/\.xlsx$/i.test(file.name)){ showMsg(`<b>${esc(file.name)}</b> is not an .xlsx file. Open it in Excel or Google Sheets and save or download it as .xlsx, then try again.`); return; }
+  const fr=new FileReader();
+  fr.onload=()=>{ S.pendingName=file.name; loadBuffer(fr.result,file.name); S.pendingName=''; };
+  fr.onerror=()=>showMsg(`Your browser could not read <b>${esc(file.name)}</b>.`);
+  fr.readAsArrayBuffer(file);
+}
+$('fileIn').addEventListener('change',e=>{ readFile(e.target.files[0]); e.target.value=''; });
+const drop=$('drop');
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>readFile(e.dataTransfer.files[0]));
+$('demoBtn').addEventListener('click',()=>{ S.pendingName=DEMO_NAME; loadBuffer(b64ToBuf(DEMO_B64),DEMO_NAME); S.pendingName=''; });
+$('toTop').addEventListener('click',()=>{
+  const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  window.scrollTo({top:0,behavior:reduce?'auto':'smooth'}); $('top').focus({preventScroll:true});
+});
+
+// initial demo load
+S.pendingName=DEMO_NAME; loadBuffer(b64ToBuf(DEMO_B64),DEMO_NAME); S.pendingName='';
+</script>
+
+</body>
+</html>
