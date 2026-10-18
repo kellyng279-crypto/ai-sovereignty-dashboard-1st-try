@@ -85,6 +85,7 @@ label.f{display:grid;gap:4px;font-size:.84rem;color:var(--muted);font-weight:550
 .msg{padding:12px 14px;border-radius:12px;font-size:.9rem}
 .msg.err{background:var(--err-bg);color:var(--err-fg)}
 .msg.ok{background:var(--accent-soft);color:var(--accent-ink)}
+.msg.warn{background:var(--warn-bg);color:var(--warn-fg)}
 
 .explain ul{margin:8px 0 0;padding-left:1.2em;display:grid;gap:6px;max-width:85ch}
 
@@ -176,7 +177,7 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
   </header>
 
   <nav class="sections" aria-label="Sections">
-    <a href="#overview">Overview</a><a href="#privacy">Privacy</a><a href="#investment">AI investment</a><a href="#reliance">Everyday reliance</a><a href="#business">Business</a><a href="#definitions">Definitions</a><a href="#responses">Responses</a>
+    <a href="#overview">Overview</a><a href="#privacy">Privacy</a><a href="#investment">AI investment</a><a href="#reliance">Everyday reliance</a><a href="#business">Business</a><a href="#definitions">Definitions</a><a href="#responses">Responses</a><a href="#submit">Submit an answer</a>
   </nav>
 
   <!-- 4 workbook -->
@@ -184,13 +185,14 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
     <div class="wb">
       <div class="stack">
         <div class="section-head"><span class="eyebrow">Workbook</span><h2 id="wbH">Load a survey spreadsheet</h2>
-          <p class="muted">The file is read inside your browser. Nothing is uploaded to a server, and no account is needed.</p></div>
+          <p class="muted">Workbooks are read inside your browser and are never uploaded. Live data is read from a Supabase table in Sydney; only answers you submit with the form at the bottom of the page are sent there.</p></div>
         <div class="drop" id="drop">
-          <p><b>Drag an .xlsx file here</b>, or choose one from your computer.</p>
+          <p><b>Live data</b> comes from the class Supabase database. You can also <b>drag an .xlsx file here</b>, choose one from your computer, or load the original demo workbook.</p>
           <div class="row">
-            <label class="btn primary" for="fileIn">Upload workbook</label>
+            <button class="btn primary" id="liveBtn" type="button">Load live data</button>
+            <label class="btn" for="fileIn">Upload workbook</label>
             <input type="file" id="fileIn" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" style="position:absolute;width:1px;height:1px;opacity:0">
-            <button class="btn" id="demoBtn" type="button">Load demo</button>
+            <button class="btn" id="demoBtn" type="button">Load demo workbook</button>
           </div>
           <p class="small muted">Only Excel .xlsx files are supported. Other formats (.xls, .csv, .numbers) need to be saved as .xlsx first.</p>
         </div>
@@ -198,7 +200,7 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
       </div>
       <div class="stack">
         <dl class="facts">
-          <dt>File</dt><dd id="fName">–</dd>
+          <dt>Source</dt><dd id="fName">–</dd>
           <dt>Worksheet</dt><dd><select id="sheetSel" aria-label="Worksheet"></select></dd>
           <dt>Responses</dt><dd class="num" id="fRows">–</dd>
           <dt>Missing answers</dt><dd class="num" id="fMiss">–</dd>
@@ -305,7 +307,7 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
   <section class="card block" id="responses" aria-labelledby="tH">
     <div class="section-head"><span class="eyebrow">Evidence</span><h2 id="tH">Explore the responses</h2>
       <p>Each row keeps one respondent’s five <b>original answers</b> together, exactly as written. These are not the dashboard’s category labels or themes. The five answer columns come from the five survey questions, with shortened headings explained in the guide below.</p></div>
-    <div class="tbl-wrap" style="margin-bottom:16px"><table id="guide"><thead><tr><th>Table heading</th><th>Full question in the current worksheet</th><th>Excel column</th></tr></thead><tbody></tbody></table></div>
+    <div class="tbl-wrap" style="margin-bottom:16px"><table id="guide"><thead><tr><th>Table heading</th><th>Full question in the current worksheet</th><th id="guideColH">Excel column</th></tr></thead><tbody></tbody></table></div>
     <ul class="small" style="margin:0 0 14px;padding-left:1.2em;display:grid;gap:4px">
       <li id="idExplain"></li>
       <li>An ellipsis (…) means the preview has been shortened. <b>Read full answer</b> reveals the complete answer.</li>
@@ -314,6 +316,25 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
     </ul>
     <p class="status" id="tblStatus" style="margin-bottom:10px"></p>
     <div class="tbl-wrap"><table class="rt" id="rtable"><thead></thead><tbody></tbody></table></div>
+  </section>
+  <!-- 12 submit -->
+  <section class="card block" id="submit" aria-labelledby="sH">
+    <div class="section-head"><span class="eyebrow">Live database</span><h2 id="sH">Submit an answer</h2>
+      <p>Answer any of the five questions. Your answer is saved as a new row in the Supabase table <code>public.responses</code>, and the dashboard reloads to include it.</p></div>
+    <div class="msg warn" style="margin-bottom:14px"><b>Before you write:</b> do not include your name, email, student number or anything that identifies you or someone else. Answers are stored in Sydney and anyone who opens this page can read them. Submitted answers cannot be edited or deleted from this page.</div>
+    <form id="submitForm" class="stack" novalidate>
+      <div id="formFields" class="stack"></div>
+      <div class="row"><button class="btn primary" id="submitBtn" type="submit">Submit answer</button><span class="small muted">Each answer can be up to 1,000 characters. Blank questions are saved as missing answers.</span></div>
+      <div id="submitMsg" role="status" aria-live="polite"></div>
+    </form>
+    <details style="margin-top:18px"><summary style="cursor:pointer;font-weight:650">How this page talks to the database</summary>
+      <ul class="small" style="margin:10px 0 0;padding-left:1.2em;display:grid;gap:6px;max-width:85ch">
+        <li>The page runs entirely in your browser and calls Supabase’s web API directly. There is no server of our own.</li>
+        <li>It uses a <b>publishable key</b>, which is visible in the page source on purpose. That key alone does not grant access to data.</li>
+        <li>Access is controlled inside the database by <b>Row Level Security</b>. The table has two policies: anyone may <b>read</b> rows and anyone may <b>add</b> a row. Nobody using this page can change or delete rows.</li>
+        <li>Each answer is limited to 1,000 characters by a database rule, which limits abuse but does not stop spam entirely.</li>
+      </ul>
+    </details>
   </section>
 </main>
 
@@ -324,6 +345,12 @@ footer{padding-block:30px 90px;color:var(--muted);font-size:.84rem}
 <script>
 const DEMO_B64 = "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";
 const DEMO_NAME = "AI_Sovereignty_35_Synthetic_Responses.xlsx";
+const SB_URL = "https://vretledipansgccxahib.supabase.co";
+const SB_KEY = "sb_publishable_mN7mESz4oDeRyRclQF7WlQ_-ATT68bp"; // publishable key: safe to be public, access is limited by Row Level Security
+const isDb = ()=> !!(S.data && S.data.db);
+const colWord = ()=> isDb()? 'database column' : 'Excel column';
+const rowWord = ()=> isDb()? 'row' : 'Excel row';
+const srcLine = ()=> isDb()? 'Supabase · table public.responses (Sydney)' : `${esc(S.fileName)} · worksheet ${esc(S.sheet)}`;
 
 /* ---------- question detection ---------- */
 const QMETA = [
@@ -428,7 +455,7 @@ function loadBuffer(buf, name){
     showMsg(`<b>${esc(name)}</b> was opened, but none of its worksheets contains all five survey questions. ${parsed.error} The dashboard is still showing the previous data.`);
     return false;
   }
-  S.wb=wb; S.fileName=name; S.sheet=pick; S.data=parsed;
+  S.wb=wb; S.fileName=name; S.sheet=pick; S.data=parsed; if(!S.demoHeaders) S.demoHeaders=parsed.headers.slice();
   S.f={priv:'',ai:'',search:'',click:null}; $('fSearch').value='';
   const sel=$('sheetSel'); sel.innerHTML = wb.SheetNames.map(n=>`<option ${n===pick?'selected':''}>${esc(n)}</option>`).join('');
   sel.disabled = wb.SheetNames.length<2;
@@ -516,12 +543,18 @@ function render(){
   const sel=selected(), N=sel.length;
 
   // workbook facts
-  $('fName').textContent=S.fileName; $('fRows').textContent=d.total;
+  $('fName').textContent=S.fileName;
+  $('liveBtn').classList.toggle('primary',!isDb()); $('liveBtn').textContent = isDb()? 'Reload live data' : 'Load live data'; $('fRows').textContent=d.total;
   $('fMiss').textContent=`${d.missingTotal} blank question ${d.missingTotal===1?'cell':'cells'}`;
-  $('fId').textContent = d.idCol? `“${d.idHeader}” · column ${d.idCol}` : 'No ID column found; the dashboard assigns D1, D2, … in row order';
+  $('fId').textContent = isDb()? 'id (uuid) · first 8 characters shown' : d.idCol? `“${d.idHeader}” · column ${d.idCol}` : 'No ID column found; the dashboard assigns D1, D2, … in row order';
   $('synthBadge').hidden=$('synthNote').hidden=!d.synthetic;
-  $('synthNote').textContent = `This workbook is marked as synthetic: its ${d.total} responses are made-up teaching examples written for class. They are not findings about real students.`;
-  $('whatSrc').innerHTML = `You are looking at <b>${esc(S.fileName)}</b>, worksheet <b>${esc(S.sheet)}</b>: ${plural(d.total,'response')} with answers to five survey questions (columns ${d.cols.join(', ')}).`;
+  $('synthBadge').textContent = isDb()? 'Synthetic + live classroom data' : 'Synthetic classroom data';
+  $('synthNote').textContent = isDb()
+    ? `The live table started with 35 made-up teaching examples (synthetic seed data). Any rows beyond those were submitted through this page. None of it is a finding about real students in general.`
+    : `This workbook is marked as synthetic: its ${d.total} responses are made-up teaching examples written for class. They are not findings about real students.`;
+  $('whatSrc').innerHTML = isDb()
+    ? `You are looking at <b>live data</b> from the Supabase table <b>public.responses</b>, stored in Sydney: ${plural(d.total,'response')} with answers to five survey questions (database columns ${d.cols.join(', ')}). In this view, each <b>table row</b> plays the role of a spreadsheet row.`
+    : `You are looking at <b>${esc(S.fileName)}</b>, worksheet <b>${esc(S.sheet)}</b>: ${plural(d.total,'response')} with answers to five survey questions (columns ${d.cols.join(', ')}).`;
 
   // filter dropdowns
   const priv=$('fPriv'), ai=$('fAi');
@@ -542,7 +575,9 @@ function render(){
   $('kSel').textContent=N; $('kSelSub').textContent=`of ${d.total} responses in the worksheet`;
   $('kMiss').textContent=missSel; $('kMissSub').textContent=`${d.missingTotal} blank question cells in the whole worksheet`;
   $('kAns').textContent=N*5-missSel;
-  $('ovDesc').textContent = `${d.synthetic?'A synthetic classroom dataset':'A survey dataset'} of ${d.total} responses to five open questions about AI sovereignty, read from ${S.fileName} (${S.sheet}).`;
+  $('ovDesc').textContent = isDb()
+    ? `Live data: ${d.total} responses to five open questions about AI sovereignty, read from the Supabase table public.responses (35 synthetic seed rows plus any submitted answers).`
+    : `${d.synthetic?'A synthetic classroom dataset':'A survey dataset'} of ${d.total} responses to five open questions about AI sovereignty, read from ${S.fileName} (${S.sheet}).`;
   renderObs(sel);
 
   renderCatChart('privacy', 3, 'pH', 'Privacy concern', sel, PRIV_RULES, PRIV_ORDER, r=>r.priv);
@@ -595,7 +630,7 @@ function sourceBlock(q, title, hid){
   const d=S.data;
   return `<div class="section-head" style="margin:0"><span class="eyebrow">Source · Survey Question ${q}</span><h2 id="${hid}">${esc(title)}</h2></div>
     <p class="qtext">“${esc(d.headers[q-1])}”</p>
-    <p class="small muted">${esc(S.fileName)} · worksheet ${esc(S.sheet)} · Excel column <b class="mono">${d.cols[q-1]}</b></p>`;
+    <p class="small muted">${srcLine()} · ${colWord()} <b class="mono">${d.cols[q-1]}</b></p>`;
 }
 const clickHelp = `<p><b>Clicking a bar</b> keeps only respondents in that category across the whole dashboard and jumps to their original answers. Click the same bar again, or use Reset filters, to clear it.</p>`;
 
@@ -634,7 +669,7 @@ function renderThemeChart(id,q,hid,title,sel,get){
     <p class="small"><b>Counts</b> are answers matching each theme. <b>Percentages</b> divide by all <b class="num">${N}</b> selected responses (answered <b class="num">${answered}</b>, missing <b class="num">${miss}</b>). ${tagged} answers matched at least one theme; because one answer can match several themes, percentages can add up to more than 100%.</p>
     <div class="meta"><p>Themes are <b>provisional</b> keyword groupings added by the dashboard, explained step by step in <a href="#method">How answers become themes</a>.${extraNote}</p>${clickHelp}</div>
     <div class="examples"><p class="small muted"><b>Example answers.</b> For each theme, the example is the <b>first matching answer in worksheet order</b> within the current view. It is one illustration, not a separate dataset, and it does not represent every answer in that theme.</p>
-      ${ex.length? ex.map(e=>`<blockquote><b>${esc(e.th)}</b> · ID ${esc(e.r.id)}, row ${e.r.excelRow} · matched <span class="mono">${esc(e.hits.join(', '))}</span><br>“${esc(e.r.ans[q-1])}”</blockquote>`).join('') : '<p class="empty">No theme has a matching answer in this view.</p>'}
+      ${ex.length? ex.map(e=>`<blockquote><b>${esc(e.th)}</b> · ID ${esc(e.r.id)}, ${rowWord()} ${e.r.excelRow} · matched <span class="mono">${esc(e.hits.join(', '))}</span><br>“${esc(e.r.ans[q-1])}”</blockquote>`).join('') : '<p class="empty">No theme has a matching answer in this view.</p>'}
     </div>
     <p class="interp"><b>Reading this chart:</b> ${esc(interp)}</p>`;
 }
@@ -655,7 +690,7 @@ function renderWorked(sel){
     <p class="small muted">Chosen automatically: the first selected response, in worksheet order, whose Question 2 answer matches two or more themes (or Question 5 if none does; or a single-theme match if no answer has several).</p>
     <dl class="facts">
       <dt>Question</dt><dd>Question ${q} · ${esc(QMETA[q-1].short)} (column ${S.data.cols[q-1]})</dd>
-      <dt>Response</dt><dd>ID ${esc(r.id)} · Excel row ${r.excelRow}</dd>
+      <dt>Response</dt><dd>ID ${esc(r.id)} · ${rowWord()} ${r.excelRow}</dd>
       <dt>Original answer</dt><dd style="font-weight:400">“${highlight(r.ans[q-1], allHits)}”</dd>
       <dt>Matched keywords</dt><dd>${t.list.map(x=>`${esc(x.label)}: <span class="mono">${esc(x.hits.join(', '))}</span>`).join('<br>')}</dd>
       <dt>Assigned themes</dt><dd>${esc(joinAnd(t.list.map(x=>x.label)))}</dd>
@@ -687,11 +722,11 @@ function renderDefs(sel){
   const blanks = sel.filter(r=>!r.ans[0]).length;
   host.innerHTML = `<div class="section-head"><span class="eyebrow">Source · Survey Question 1</span><h2 id="dH">What does AI sovereignty mean?</h2>
     <p class="qtext">“${esc(d.headers[0])}”</p>
-    <p class="small muted">${esc(S.fileName)} · worksheet ${esc(S.sheet)} · Excel column <b class="mono">${d.cols[0]}</b></p>
+    <p class="small muted">${srcLine()} · ${colWord()} <b class="mono">${d.cols[0]}</b></p>
     <p>These quotation cards are <b>original answers to Question 1</b>${d.synthetic?' (fictional examples in this demonstration workbook)':''}. They are not official definitions, and the website does not write or endorse them. Different interpretations and uncertain answers are kept as written. No answer is scored as right or wrong, because no marking rubric was supplied.</p>
-    <p class="small muted">Selection rule: one card per distinct answer, in worksheet order, labelled with the first response ID and Excel row that gave it. The number of cards does not show how common an interpretation is; repeated answers are still listed in the response table. Blank answers have no card. The cards change when the filters change.</p></div>
+    <p class="small muted">Selection rule: one card per distinct answer, in source order (worksheet rows, or submission time for live data), labelled with the first response ID and row that gave it. The number of cards does not show how common an interpretation is; repeated answers are still listed in the response table. Blank answers have no card. The cards change when the filters change.</p></div>
     <p class="small" style="margin-bottom:12px"><b class="num">${seen.size}</b> distinct answers from <b class="num">${sel.length}</b> selected responses${blanks? `; ${blanks} blank`:''}.</p>
-    ${seen.size? `<div class="quotes">${[...seen.values()].map(r=>`<figure class="quote" style="margin:0"><p>${esc(r.ans[0])}</p><figcaption class="small muted">ID ${esc(r.id)} · Excel row ${r.excelRow}</figcaption></figure>`).join('')}</div>`
+    ${seen.size? `<div class="quotes">${[...seen.values()].map(r=>`<figure class="quote" style="margin:0"><p>${esc(r.ans[0])}</p><figcaption class="small muted">ID ${esc(r.id)} · ${rowWord()} ${r.excelRow}</figcaption></figure>`).join('')}</div>`
       : '<p class="empty">No Question 1 answers in the current view.</p>'}`;
 }
 
@@ -704,10 +739,13 @@ function cell(a,key){
 function renderTable(sel){
   const d=S.data;
   $('guide').querySelector('tbody').innerHTML = QMETA.map((q,i)=>`<tr><td><b>${esc(q.short)}</b></td><td>${esc(d.headers[i])}</td><td class="mono">${d.cols[i]}</td></tr>`).join('');
-  $('idExplain').innerHTML = d.idCol
+  $('guideColH').textContent = isDb()? 'Database column' : 'Excel column';
+  $('idExplain').innerHTML = isDb()
+    ? `<b>ID</b> is the first 8 characters of the row’s <code>id</code> in the Supabase table. <b>Row</b> is its position when rows are sorted by submission time (1 = earliest), so new answers appear at the end.`
+    : d.idCol
     ? `<b>ID</b> is the workbook’s own “${esc(d.idHeader)}” value (column ${d.idCol}). <b>Excel row</b> is the row number in worksheet ${esc(S.sheet)}, so you can find the original cells.`
     : `This worksheet has no ID column, so the dashboard assigns IDs D1, D2, … in row order. <b>Excel row</b> is the real row number in worksheet ${esc(S.sheet)}.`;
-  $('rtable').querySelector('thead').innerHTML = `<tr><th>ID</th><th>Excel row</th>${QMETA.map(q=>`<th>${esc(q.short)}</th>`).join('')}</tr>`;
+  $('rtable').querySelector('thead').innerHTML = `<tr><th>ID</th><th>${isDb()?"Row":"Excel row"}</th>${QMETA.map(q=>`<th>${esc(q.short)}</th>`).join('')}</tr>`;
   $('tblStatus').innerHTML = `<b class="num">${sel.length}</b> of ${d.total} responses shown${S.f.click||S.f.priv||S.f.ai||S.f.search.trim()?' (filtered)':''}.`;
   $('rtable').querySelector('tbody').innerHTML = sel.length
     ? sel.map(r=>`<tr><td class="id num">${esc(r.id)}</td><td class="id num">${r.excelRow}</td>${r.ans.map((a,i)=>`<td>${cell(a,r.excelRow+'_'+i)}</td>`).join('')}</tr>`).join('')
@@ -765,8 +803,59 @@ $('toTop').addEventListener('click',()=>{
   window.scrollTo({top:0,behavior:reduce?'auto':'smooth'}); $('top').focus({preventScroll:true});
 });
 
-// initial demo load
+/* ---------- Supabase (live data + submissions) ---------- */
+const SB_HEADERS = {apikey: SB_KEY};
+async function loadLive(){
+  $('liveBtn').disabled=true; showMsg('Loading live responses from Supabase…','ok');
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/responses?select=id,created_at,q1,q2,q3,q4,q5&order=created_at.asc,id.asc`, {headers:SB_HEADERS});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json();
+    const rows = json.map((r,i)=>({id:String(r.id).slice(0,8), genId:false, excelRow:i+1, created:r.created_at,
+      ans:[r.q1,r.q2,r.q3,r.q4,r.q5].map(v=>String(v??'').trim())}));
+    S.wb=null; S.fileName='Supabase · public.responses'; S.sheet='live table';
+    S.data={db:true, headers:(S.demoHeaders||QMETA.map(q=>q.subject)), cols:['q1','q2','q3','q4','q5'], idCol:'id', idHeader:'id',
+      rows, synthetic:true, total:rows.length, missingTotal:rows.reduce((s,r)=>s+r.ans.filter(a=>!a).length,0)};
+    S.f={priv:'',ai:'',search:'',click:null}; $('fSearch').value='';
+    const sel=$('sheetSel'); sel.innerHTML='<option>live table</option>'; sel.disabled=true;
+    $('sheetHint').textContent='Live data comes from one database table, so there is no worksheet to choose.';
+    showMsg(`Loaded <b>${plural(rows.length,'response')}</b> from Supabase at ${new Date().toLocaleTimeString()}.`,'ok');
+    render(); return true;
+  }catch(e){
+    showMsg(`Live data could not be loaded from Supabase (${esc(e.message)}). The free database pauses after a week without use, or your network may block it. The dashboard is showing ${isDb()?'the last live data it loaded':'the demo workbook'} instead.`);
+    return false;
+  }finally{ $('liveBtn').disabled=false; }
+}
+$('liveBtn').addEventListener('click', loadLive);
+
+function buildForm(){
+  const host=$('formFields'); if(host.dataset.built) return;
+  const h=S.demoHeaders||QMETA.map(q=>q.subject);
+  host.innerHTML = QMETA.map((q,i)=>`<label class="f" for="ans${q.n}"><span><b>Question ${q.n}.</b> ${esc(h[i])}</span>
+    <textarea id="ans${q.n}" maxlength="1000" rows="3"></textarea></label>`).join('');
+  host.dataset.built='1';
+}
+$('submitForm').addEventListener('submit', async e=>{
+  e.preventDefault();
+  const body={}; QMETA.forEach(q=>{ const v=$('ans'+q.n).value.trim(); body['q'+q.n]= v || null; });
+  const msg=$('submitMsg');
+  if(QMETA.every(q=>!body['q'+q.n])){ msg.innerHTML='<div class="msg err">Write an answer to at least one question before submitting.</div>'; return; }
+  const btn=$('submitBtn'); btn.disabled=true; msg.innerHTML='<div class="msg ok">Sending…</div>';
+  try{
+    const res = await fetch(`${SB_URL}/rest/v1/responses`, {method:'POST', headers:{...SB_HEADERS,'Content-Type':'application/json',Prefer:'return=minimal'}, body:JSON.stringify(body)});
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    QMETA.forEach(q=>$('ans'+q.n).value='');
+    msg.innerHTML='<div class="msg ok">Saved to the Supabase table. The dashboard has reloaded the live data, and your answer appears as the last row of the response table.</div>';
+    await loadLive();
+  }catch(err){
+    msg.innerHTML=`<div class="msg err">Your answer was not saved (${esc(err.message)}). Check your connection and try again. If it keeps failing, the free database may be paused.</div>`;
+  }finally{ btn.disabled=false; }
+});
+
+// initial load: render the embedded demo at once, then switch to live data when it arrives
 S.pendingName=DEMO_NAME; loadBuffer(b64ToBuf(DEMO_B64),DEMO_NAME); S.pendingName='';
+buildForm();
+loadLive();
 </script>
 
 </body>
